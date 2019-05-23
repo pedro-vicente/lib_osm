@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 2.8)
+project (lib_osm)
+
+if (MSVC)
+  add_definitions( "/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE" )
+endif(MSVC)
+
+include_directories(libhpxml/src)
+set(sources ${sources})
+set(sources ${sources} libhpxml/src/libhpxml.c)
+set(sources ${sources} libhpxml/src/libhpxml.h)
+set(sources ${sources} libhpxml/src/bstring.c)
+set(sources ${sources} libhpxml/src/bstring.h)
+set(sources ${sources} lib_osm.cc)
+set(sources ${sources} lib_osm.hh)
+set(sources ${sources} )
+add_executable(osm_read ${sources} osm_read.cc)

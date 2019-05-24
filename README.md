@@ -1,10 +1,29 @@
 # lib_osm
 c++ library to read the OpenStreetMap (OSM) format 
 
+![alt text](https://user-images.githubusercontent.com/6119070/58339637-0766c000-7e18-11e9-83c3-0c82305c348e.png "logo")
+
 https://wiki.openstreetmap.org/wiki/Main_Page
 
 
 ## XML parsing by libhpxml
+
+libhpxml is a high performance XML stream parser library written in C with a simple API. 
+It is intended to parse large XML files very speed and memory efficiently.
+While parsing an XML file libhpxml returns pointers to the elements and attributes. 
+C strings are usually '\0'-terminated but this is not applicable here because it would require that '\0' characters are inserted after each element, 
+resulting in huge data movement. 
+Thus, libhpxml uses "B strings" which are hold in the bstring_t structure. 
+The structure contains a pointer to the string and its length.
+
+```c
+typedef struct bstring
+{
+  int len;
+  char *buf;
+} bstring_t;
+```
+
 https://www.abenteuerland.at/libhpxml/
 
 ## OpenStreetMap data structures

@@ -17,6 +17,41 @@ extern "C"
 #include "lib_osm.hh"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+//utility libhpxml functions
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//hpx_printf_attr
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void hpx_printf_attr(const hpx_attr_t *a)
+{
+  printf("%.*s=%c%.*s%c ", a->name.len, a->name.buf, a->delim, a->value.len, a->value.buf, a->delim);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//hpx_attr_value
+//libhpxml uses "B strings" which are hold in the bstring_t structure. 
+//The structure contains a pointer to the string and its length. 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bstring_t hpx_attr_value(hpx_tag_t* tag, const char* name)
+{
+  for (int idx = 0; idx < tag->nattr; idx++)
+  {
+    hpx_attr_t *a = &tag->attr[idx];
+    char* tmp = (char*)malloc(a->name.len);
+    memcpy(tmp, a->name.buf, a->name.len);
+    if (strncmp(tmp, name, a->name.len) == 0)
+    {
+      free(tmp);
+      return a->value;
+    }
+    free(tmp);
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //main
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -76,6 +111,13 @@ int main(int argc, char* argv[])
       {
         printf("%s open\n", name.c_str());
         in_node = true;
+        for (int idx = 0; idx < tag->nattr; idx++)
+        {
+          hpx_printf_attr(&tag->attr[idx]);
+        }
+        printf("\n");
+        bstring_t value = hpx_attr_value(tag, "lat");
+        printf("lat is %.*s\n", value.len, value.buf);
       }
       break;
 

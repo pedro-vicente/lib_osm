@@ -32,8 +32,14 @@ Tags describe the meaning of the particular element to which they are attached.
 A tag consists of two free format text fields; a 'key' and a 'value'.
 */
 
-struct osm_node
+class osm_node
 {
+public:
+  osm_node(unsigned int id_, double lat_, double lon_) :
+    id(id_),
+    lat(lat_),
+    lon(lon_)
+  {}
   unsigned int id;
   double lat;
   double lon;

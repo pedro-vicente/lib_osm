@@ -52,6 +52,34 @@ bstring_t hpx_attr_value(hpx_tag_t* tag, const char* name)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+//hpx_bstring_atof
+//return double from B string
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+double hpx_bstring_atof(bstring_t bs)
+{
+  char* tmp = (char*)malloc(bs.len);
+  memcpy(tmp, bs.buf, bs.len);
+  double d = atof((char*)tmp);
+  free(tmp);
+  return d;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//hpx_bstring_atof
+//return double from B string
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int hpx_bstring_atoi(bstring_t bs)
+{
+  char* tmp = (char*)malloc(bs.len);
+  memcpy(tmp, bs.buf, bs.len);
+  int n = atoi((char*)tmp);
+  free(tmp);
+  return n;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //main
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,13 +139,16 @@ int main(int argc, char* argv[])
       {
         printf("%s open\n", name.c_str());
         in_node = true;
-        for (int idx = 0; idx < tag->nattr; idx++)
-        {
-          hpx_printf_attr(&tag->attr[idx]);
-        }
-        printf("\n");
-        bstring_t value = hpx_attr_value(tag, "lat");
-        printf("lat is %.*s\n", value.len, value.buf);
+        bstring_t id = hpx_attr_value(tag, "id");
+        bstring_t lat = hpx_attr_value(tag, "lat");
+        bstring_t lon = hpx_attr_value(tag, "lon");
+        osm_node node(hpx_bstring_atoi(id),
+          hpx_bstring_atof(lat),
+          hpx_bstring_atof(lon));
+        printf("id=%d lat=%f lon=%f \n",
+          hpx_bstring_atoi(id),
+          hpx_bstring_atof(lat),
+          hpx_bstring_atof(lon));
       }
       break;
 

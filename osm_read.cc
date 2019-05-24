@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <assert.h>
 #ifdef _MSC_VER
 #include <io.h>
 #else
@@ -15,33 +16,9 @@ extern "C"
 }
 #include "lib_osm.hh"
 
-/*
-OpenStreetMap data structures
-Elements:
-Elements are the basic components of OpenStreetMap's conceptual data model of the physical world.
-They consist of nodes (defining points in space), ways (defining linear features and area boundaries), and
-relations (which are sometimes used to explain how other elements work together).
-All of the above can have one or more associated tags (which describe the meaning of a particular element).
-
-Nodes:
-A node is one of the core elements in the OpenStreetMap data model.
-It consists of a single point in space defined by its latitude, longitude and node id.
-
-Way:
-A way is an ordered list of nodes that define a polyline.
-Ways are used to represent linear features such as rivers and roads.
-Ways can also represent the boundaries of areas (solid polygons) such as buildings or forests.
-In this case, the way's first and last node will be the same. This is called a "closed way".
-
-Relation:
-A relation is a multi-purpose data structure that documents a relationship between two or more data elements
-(nodes, ways, and/or other relations).
-
-Tag
-All types of data element (nodes, ways and relations), as well as changesets, can have tags. 
-Tags describe the meaning of the particular element to which they are attached.
-A tag consists of two free format text fields; a 'key' and a 'value'.
-*/
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//main
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[])
 {
@@ -63,19 +40,70 @@ int main(int argc, char* argv[])
   {
   }
 
-  // loop as long as XML elements are available
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  //loop as long as XML elements are available
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
   while (hpx_get_elem(ctl, &b, NULL, &lno) > 0)
   {
-    // parse XML element
-    if (!hpx_process_elem(b, tag))
-    {
-      printf("[%ld] type=%d, name=%.*s, nattr=%d\n", lno, tag->type, tag->tag.len, tag->tag.buf, tag->nattr);
-    }
-    else
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    //parse XML element
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    if (hpx_process_elem(b, tag) < 0)
     {
       printf("[%ld] ERROR in element: %.*s\n", lno, b.len, b.buf);
+      assert(0);
+      exit(1);
     }
-  }
+    printf("[%ld] type=%d, name=%.*s, nattr=%d\n", lno, tag->type, tag->tag.len, tag->tag.buf, tag->nattr);
+    std::string name(tag->tag.buf, tag->tag.len); //tag name
+    bool in_node = false;
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    //switch tag type 
+    //HPX_ILL, HPX_OPEN, HPX_SINGLE, HPX_CLOSE, HPX_LITERAL, HPX_ATT, HPX_INSTR, HPX_COMMENT
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    switch (tag->type)
+    {
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+      //HPX_OPEN
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    case HPX_OPEN:
+      if (name.compare("node") == 0)
+      {
+        printf("%s open\n", name.c_str());
+        in_node = true;
+      }
+      break;
+
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+      //HPX_CLOSE
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    case HPX_CLOSE:
+      if (name.compare("node") == 0)
+      {
+        printf("%s close\n", name.c_str());
+        in_node = false;
+      }
+      break;
+
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+      //HPX_SINGLE
+      /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    case HPX_SINGLE:
+      if (name.compare("node") == 0)
+      {
+        printf("%s single\n", name.c_str());
+        assert(in_node == false); //cannot have single XML node while there is an open XML node
+      }
+      break;
+    } //switch
+  } //while
 
   if (!ctl->eof)
   {

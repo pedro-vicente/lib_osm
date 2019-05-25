@@ -79,6 +79,23 @@ int hpx_bstring_atoi(bstring_t bs)
   return n;
 }
 
+std::vector<osm_node> nodes;//temporary list of nodes before inserting in a <way>
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//read 'id', 'lat' and 'lon' attributes from a <node> tag 
+//and insert as a new node in temporary list
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void store_node(hpx_tag_t* tag)
+{
+  bstring_t id = hpx_attr_value(tag, "id");
+  bstring_t lat = hpx_attr_value(tag, "lat");
+  bstring_t lon = hpx_attr_value(tag, "lon");
+  osm_node node(hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
+  printf("id=%d lat=%f lon=%f \n", hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
+  nodes.push_back(node);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //main
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,8 +113,6 @@ int main(int argc, char* argv[])
   //2) every <way> is a list of <nd> items, each of which is a backreference to a <node>.
   //traverse all <nd> items and check if it exists in the temporary <node> list,
   //store in <way> if it does
-
-  std::vector<osm_node> nodes;//temporary list of nodes before inserting in a <way>
 
   if ((fd = open("malibu_park.osm", O_RDONLY)) < 0)
   {
@@ -147,13 +162,7 @@ int main(int argc, char* argv[])
       {
         printf("%s open\n", name.c_str());
         in_node = true;
-
-        bstring_t id = hpx_attr_value(tag, "id");
-        bstring_t lat = hpx_attr_value(tag, "lat");
-        bstring_t lon = hpx_attr_value(tag, "lon");
-        osm_node node(hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-        printf("id=%d lat=%f lon=%f \n", hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-        nodes.push_back(node);
+        store_node(tag);
       }
       break;
 
@@ -178,13 +187,7 @@ int main(int argc, char* argv[])
       {
         printf("%s single\n", name.c_str());
         assert(in_node == false); //cannot have single XML node while there is an open XML node
-
-        bstring_t id = hpx_attr_value(tag, "id");
-        bstring_t lat = hpx_attr_value(tag, "lat");
-        bstring_t lon = hpx_attr_value(tag, "lon");
-        osm_node node(hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-        printf("id=%d lat=%f lon=%f \n", hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-        nodes.push_back(node);
+        store_node(tag);
       }
       break;
     } //switch

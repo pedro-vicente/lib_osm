@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 /*
 OpenStreetMap data structures
@@ -39,6 +40,7 @@ A tag consists of two free format text fields; a 'key' and a 'value'.
 class osm_node
 {
 public:
+  osm_node() {};
   osm_node(unsigned int id_, double lat_, double lon_) :
     id(id_),
     lat(lat_),

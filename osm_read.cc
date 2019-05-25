@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -79,7 +80,7 @@ int hpx_bstring_atoi(bstring_t bs)
   return n;
 }
 
-std::vector<osm_node> nodes;//temporary list of nodes before inserting in a <way>
+std::map<unsigned int, osm_node> tmp_nodes;//temporary list of nodes before inserting in a <way>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //read 'id', 'lat' and 'lon' attributes from a <node> tag 
@@ -88,12 +89,13 @@ std::vector<osm_node> nodes;//temporary list of nodes before inserting in a <way
 
 void store_node(hpx_tag_t* tag)
 {
-  bstring_t id = hpx_attr_value(tag, "id");
+  bstring_t id_ = hpx_attr_value(tag, "id");
   bstring_t lat = hpx_attr_value(tag, "lat");
   bstring_t lon = hpx_attr_value(tag, "lon");
-  osm_node node(hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-  printf("id=%d lat=%f lon=%f \n", hpx_bstring_atoi(id), hpx_bstring_atof(lat), hpx_bstring_atof(lon));
-  nodes.push_back(node);
+  unsigned int id = hpx_bstring_atoi(id_);
+  osm_node node(id, hpx_bstring_atof(lat), hpx_bstring_atof(lon));
+  printf("id=%d lat=%f lon=%f \n", id, hpx_bstring_atof(lat), hpx_bstring_atof(lon));
+  tmp_nodes[id] = node;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,6 +109,9 @@ int main(int argc, char* argv[])
   bstring_t b;
   long lno;
   int fd;
+
+  osm_way *way = NULL; //currently processed way
+  std::vector<osm_way> ways; //final list of ways
 
   //assumption: the XML data defines all the nodes before the ways
   //1) stream read <nodes> into a temporary list
@@ -143,8 +148,10 @@ int main(int argc, char* argv[])
       exit(1);
     }
     printf("[%ld] type=%d, name=%.*s, nattr=%d\n", lno, tag->type, tag->tag.len, tag->tag.buf, tag->nattr);
-    std::string name(tag->tag.buf, tag->tag.len); //tag name
-    bool in_node = false;
+
+    std::string tag_name(tag->tag.buf, tag->tag.len); //tag name
+    bool in_node = false; //currently processing a node (open tag not closed)
+    bool in_way = false; //currently processing a way (open tag not closed)
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //switch tag type 
@@ -158,11 +165,28 @@ int main(int argc, char* argv[])
       /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case HPX_OPEN:
-      if (name.compare("node") == 0)
+      if (tag_name.compare("node") == 0)
       {
-        printf("%s open\n", name.c_str());
+        printf("%s open\n", tag_name.c_str());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //store temporary <node> id and enter node mode
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
         in_node = true;
         store_node(tag);
+      }
+      else if (tag_name.compare("way") == 0)
+      {
+        printf("%s open\n", tag_name.c_str());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //get <way> id and enter way mode
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        unsigned int id = hpx_bstring_atoi(hpx_attr_value(tag, "id"));
+        way = new osm_way(id);
+        in_way = true;
       }
       break;
 
@@ -171,10 +195,27 @@ int main(int argc, char* argv[])
       /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case HPX_CLOSE:
-      if (name.compare("node") == 0)
+      if (tag_name.compare("node") == 0)
       {
-        printf("%s close\n", name.c_str());
+        printf("%s close\n", tag_name.c_str());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //close node mode
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
         in_node = false;
+      }
+      else if (tag_name.compare("way") == 0)
+      {
+        printf("%s close\n", tag_name.c_str());
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //close way mode and store way in final <way> list, delete temporary storage
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        ways.push_back(*way);
+        delete way;
+        in_way = false;
       }
       break;
 
@@ -183,11 +224,27 @@ int main(int argc, char* argv[])
       /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case HPX_SINGLE:
-      if (name.compare("node") == 0)
+      if (tag_name.compare("node") == 0)
       {
-        printf("%s single\n", name.c_str());
+        printf("%s single\n", tag_name.c_str());
         assert(in_node == false); //cannot have single XML node while there is an open XML node
         store_node(tag);
+      }
+      else if (tag_name.compare("nd") == 0)
+      {
+        unsigned int ref_id = hpx_bstring_atoi(hpx_attr_value(tag, "ref"));
+        printf("%s single\n", tag_name.c_str());
+        printf("ref=%d\n", ref_id);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //look for this node in the temporarry list of nodes, insert in <way> if found
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        if (tmp_nodes.find(ref_id) != tmp_nodes.end())
+        {
+          osm_node node = tmp_nodes[ref_id];
+          way->nd.push_back(node);
+        }
       }
       break;
     } //switch

@@ -17,6 +17,7 @@ extern "C"
 }
 #include "lib_osm.hh"
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //utility libhpxml functions
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,8 +111,10 @@ int main(int argc, char* argv[])
   long lno;
   int fd;
 
-  osm_way *way = NULL; //currently processed way
+  osm_way *cway = NULL; //currently processed way
+  osm_node *cnode = NULL; //currently processed node
   std::vector<osm_way> ways; //final list of ways
+  std::vector<osm_node> nodes; //final list of nodes (standalone)
 
   //assumption: the XML data defines all the nodes before the ways
   //1) stream read <nodes> into a temporary list
@@ -170,11 +173,20 @@ int main(int argc, char* argv[])
         printf("%s open\n", tag_name.c_str());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        //store temporary <node> id and enter node mode
+        //store temporary <node> to add to way
         /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        in_node = true;
         store_node(tag);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //instantiate <node> with id, lat, lon and enter node mode
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        unsigned int id = hpx_bstring_atoi(hpx_attr_value(tag, "id"));
+        double lat = hpx_bstring_atof(hpx_attr_value(tag, "lat"));
+        double lon = hpx_bstring_atof(hpx_attr_value(tag, "lon"));
+        cnode = new osm_node(id, lat, lon);
+        in_node = true;
       }
       else if (tag_name.compare("way") == 0)
       {
@@ -185,7 +197,7 @@ int main(int argc, char* argv[])
         /////////////////////////////////////////////////////////////////////////////////////////////////////
 
         unsigned int id = hpx_bstring_atoi(hpx_attr_value(tag, "id"));
-        way = new osm_way(id);
+        cway = new osm_way(id);
         in_way = true;
       }
       break;
@@ -200,9 +212,11 @@ int main(int argc, char* argv[])
         printf("%s close\n", tag_name.c_str());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        //close node mode
+        //close node mode and store noe in final <node> list, delete temporary storage
         /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        nodes.push_back(*cnode);
+        delete cnode;
         in_node = false;
       }
       else if (tag_name.compare("way") == 0)
@@ -213,8 +227,9 @@ int main(int argc, char* argv[])
         //close way mode and store way in final <way> list, delete temporary storage
         /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        ways.push_back(*way);
-        delete way;
+        ways.push_back(*cway);
+        delete cway;
+        tmp_nodes.clear();
         in_way = false;
       }
       break;
@@ -243,12 +258,14 @@ int main(int argc, char* argv[])
         if (tmp_nodes.find(ref_id) != tmp_nodes.end())
         {
           osm_node node = tmp_nodes[ref_id];
-          way->nd.push_back(node);
+          cway->nd.push_back(node);
         }
       }
       break;
     } //switch
   } //while
+
+  printf("%zd ways %zd nodes\n", ways.size(), nodes.size());
 
   if (!ctl->eof)
   {

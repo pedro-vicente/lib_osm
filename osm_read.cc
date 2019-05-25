@@ -115,13 +115,25 @@ int main(int argc, char* argv[])
   hpx_ctrl_t* ctl;
   hpx_tag_t* tag;
   bstring_t bstr;
-  long lno;
+  long nbr_line;
   int fd;
   osm_way *cway = NULL; //currently processed way
   osm_node *cnode = NULL; //currently processed node
   std::vector<osm_way> ways; //final list of ways
   std::vector<osm_node> nodes; //final list of nodes (standalone)
   int verb = 0;
+
+  printf("%s, getting file size...", fname);
+  unsigned int nbr_lines = 0;
+  FILE *file = fopen(fname, "r");
+  int ch;
+  while (EOF != (ch = getc(file)))
+  {
+    if ('\n' == ch) ++nbr_lines;
+  }
+  printf("%u lines\n", nbr_lines);
+  unsigned int nbr_print = nbr_lines / 100;
+  fclose(file);
 
   //assumption: the XML data defines all the nodes before the ways
   //1) stream read <nodes> into a temporary list
@@ -147,7 +159,7 @@ int main(int argc, char* argv[])
   //loop as long as XML elements are available
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  while (hpx_get_elem(ctl, &bstr, NULL, &lno) > 0)
+  while (hpx_get_elem(ctl, &bstr, NULL, &nbr_line) > 0)
   {
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //parse XML element
@@ -155,14 +167,19 @@ int main(int argc, char* argv[])
 
     if (hpx_process_elem(bstr, tag) < 0)
     {
-      printf("[%ld] ERROR in element: %.*s\n", lno, bstr.len, bstr.buf);
+      printf("[%ld] ERROR in element: %.*s\n", nbr_line, bstr.len, bstr.buf);
       assert(0);
       exit(1);
     }
 #ifdef VERB
-    printf("[%ld] type=%d, name=%.*s, nattr=%d\n", lno, tag->type, tag->tag.len, tag->tag.buf, tag->nattr);
+    printf("[%ld] type=%d, name=%.*s, nattr=%d\n", nbr_line, tag->type, tag->tag.len, tag->tag.buf, tag->nattr);
 #else
-    if (lno && lno % 1000000 == 0) printf("[%ld]\n", lno);
+    if (nbr_line && nbr_line % nbr_print == 0)
+    {
+      double per = (double)nbr_line / nbr_lines * 100.0;
+      printf("\rreading file, %zd ways %zd nodes ...%.0f%%", ways.size(), nodes.size(), per);
+      fflush(stdout);
+  }
 #endif
 
     std::string tag_name(tag->tag.buf, tag->tag.len); //tag name
@@ -265,7 +282,7 @@ int main(int argc, char* argv[])
       }
       break;
     } //switch
-  } //while
+} //while
 
   if (!ctl->eof)
   {
@@ -277,7 +294,7 @@ int main(int argc, char* argv[])
   close(fd);
 
   double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-  printf("%zd ways %zd nodes in %.1f seconds\n", ways.size(), nodes.size(), duration);
+  printf("\n%zd ways %zd nodes in %.1f seconds\n", ways.size(), nodes.size(), duration);
   exit(EXIT_SUCCESS);
-}
+  }
 

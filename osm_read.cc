@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <ctime>
 #ifdef _MSC_VER
 #include <io.h>
 #else
@@ -105,6 +106,11 @@ void store_node(hpx_tag_t* tag)
 
 int main(int argc, char* argv[])
 {
+  if (argc != 2)
+  {
+    exit(1);
+  }
+  const char *fname = argv[1];
   hpx_ctrl_t* ctl;
   hpx_tag_t* tag;
   bstring_t b;
@@ -122,7 +128,9 @@ int main(int argc, char* argv[])
   //traverse all <nd> items and check if it exists in the temporary <node> list,
   //store in <way> if it does
 
-  if ((fd = open("malibu_park.osm", O_RDONLY)) < 0)
+  std::clock_t start = std::clock();
+
+  if ((fd = open(fname, O_RDONLY)) < 0)
   {
     exit(EXIT_FAILURE);
   }
@@ -265,8 +273,6 @@ int main(int argc, char* argv[])
     } //switch
   } //while
 
-  printf("%zd ways %zd nodes\n", ways.size(), nodes.size());
-
   if (!ctl->eof)
   {
     exit(EXIT_FAILURE);
@@ -275,6 +281,9 @@ int main(int argc, char* argv[])
   hpx_tm_free(tag);
   hpx_free(ctl);
   close(fd);
+
+  double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+  printf("%zd ways %zd nodes in %.1f seconds\n", ways.size(), nodes.size(), duration);
   exit(EXIT_SUCCESS);
 }
 

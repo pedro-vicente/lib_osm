@@ -133,6 +133,7 @@ int main(int argc, char* argv[])
   }
   printf("%u lines\n", nbr_lines);
   unsigned int nbr_print = nbr_lines / 100;
+  if (nbr_print == 0) nbr_print = nbr_lines;
   fclose(file);
 
   //assumption: the XML data defines all the nodes before the ways
@@ -179,7 +180,7 @@ int main(int argc, char* argv[])
       double per = (double)nbr_line / nbr_lines * 100.0;
       printf("\rreading file, %zd ways %zd nodes ...%.0f%%", ways.size(), nodes.size(), per);
       fflush(stdout);
-  }
+    }
 #endif
 
     std::string tag_name(tag->tag.buf, tag->tag.len); //tag name
@@ -282,7 +283,7 @@ int main(int argc, char* argv[])
       }
       break;
     } //switch
-} //while
+  } //while
 
   if (!ctl->eof)
   {
@@ -296,5 +297,5 @@ int main(int argc, char* argv[])
   double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
   printf("\n%zd ways %zd nodes in %.1f seconds\n", ways.size(), nodes.size(), duration);
   exit(EXIT_SUCCESS);
-  }
+}
 

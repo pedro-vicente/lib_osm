@@ -313,32 +313,73 @@ int main(int argc, char* argv[])
   //add all features, <nodes> as "points"
 
   size_t nbr_nodes = nodes.size();
-  for (size_t idx = 0; idx < nbr_nodes; idx++)
+  for (size_t idx_node = 0; idx_node < nbr_nodes; idx_node++)
   {
     strm
-      << "{\n" //start feature
-      << "\"type\": \"Feature\",\n"
-      << "\"geometry\": {\n"
-      << "\"type\": \"Point\",\n"
-      << "\"coordinates\": [" << nodes.at(idx).lat << " , " << nodes.at(idx).lon << "]\n"
+      << "  {\n" //start feature
+      << "  \"type\": \"Feature\",\n"
+      << "  \"geometry\": {\n"
+      << "  \"type\": \"Point\",\n"
+      << "  \"coordinates\": [" << nodes.at(idx_node).lat << " , " << nodes.at(idx_node).lon << "]\n"
       //end geometry
-      << "}\n"
+      << "  }\n"
       //end feature
-      << "}\n"
+      << "  }\n"
       ;
-    if (idx < nbr_nodes - 1)
+    if (idx_node < nbr_nodes - 1)
     {
       strm
-        << ",\n"; //array separator
+        << "  ,\n"; //array separator
     }
   }//end nodes 
 
    //<ways> as "polygons"
-
   size_t nbr_way = ways.size();
-  for (size_t idx = 0; idx < nbr_way; idx++)
+  if (nbr_way)
   {
+    strm
+      << "  ,\n"; //object separator
   }
+  for (size_t idx_way = 0; idx_way < nbr_way; idx_way++)
+  {
+    strm
+      << "  {\n" //start feature
+      << "  \"type\": \"Feature\",\n"
+      << "  \"geometry\": {\n"
+      << "  \"type\": \"Polygon\",\n"
+      << "  \"coordinates\": [["
+      ;
+
+    //number of nodes <nd> in <way>
+    size_t nbr_nd = ways.at(idx_way).nd.size();
+    for (size_t idx_nd = 0; idx_nd < nbr_nd; idx_nd++)
+    {
+      strm
+        << "  [" << ways.at(idx_way).nd.at(idx_nd).lat << " , " << ways.at(idx_way).nd.at(idx_nd).lon << "]"
+        ;
+      if (idx_nd < nbr_nd - 1)
+      {
+        strm
+          << ","; //array separator
+      }
+    }//number of nodes
+
+    strm
+      //end coordinates
+      << "  ]]\n"
+      ;
+    strm
+      //end geometry
+      << "  }\n"
+      //end feature
+      << "  }\n"
+      ;
+    if (idx_way < nbr_way - 1)
+    {
+      strm
+        << ",\n"; //array separator
+    }
+  }//<ways>
 
   strm
     //end features

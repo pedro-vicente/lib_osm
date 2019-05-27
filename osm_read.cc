@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <ctime>
+#include <sstream>
+#include <fstream>
 #ifdef _MSC_VER
 #include <io.h>
 #else
@@ -296,6 +298,60 @@ int main(int argc, char* argv[])
 
   double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
   printf("\n%zd ways %zd nodes in %.1f seconds\n", ways.size(), nodes.size(), duration);
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  //save geojson
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  std::stringstream strm;
+  //start type and features object (feature has an array value)
+  strm
+    << "{\n"
+    << "\"type\": \"FeatureCollection\",\n"
+    << "\"features\": [\n"
+    ;
+  //add all features, <nodes> as "points"
+
+  size_t nbr_nodes = nodes.size();
+  for (size_t idx = 0; idx < nbr_nodes; idx++)
+  {
+    strm
+      << "{\n" //start feature
+      << "\"type\": \"Feature\",\n"
+      << "\"geometry\": {\n"
+      << "\"type\": \"Point\",\n"
+      << "\"coordinates\": [" << nodes.at(idx).lat << " , " << nodes.at(idx).lon << "]\n"
+      //end geometry
+      << "}\n"
+      //end feature
+      << "}\n"
+      ;
+    if (idx < nbr_nodes - 1)
+    {
+      strm
+        << ",\n"; //array separator
+    }
+  }//end nodes 
+
+   //<ways> as "polygons"
+
+  size_t nbr_way = ways.size();
+  for (size_t idx = 0; idx < nbr_way; idx++)
+  {
+  }
+
+  strm
+    //end features
+    << "]\n"
+    //end type
+    << "}\n"
+    ;
+
+  std::ofstream ofs;
+  std::string str(fname);
+  str += ".json";
+  ofs.open(str);
+  ofs << strm.rdbuf();
   exit(EXIT_SUCCESS);
 }
 

@@ -301,6 +301,7 @@ int main(int argc, char* argv[])
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////
   //save geojson
+  //order [longitude, latitude, elevation]
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 
   std::stringstream strm;
@@ -320,7 +321,7 @@ int main(int argc, char* argv[])
       << "  \"type\": \"Feature\",\n"
       << "  \"geometry\": {\n"
       << "  \"type\": \"Point\",\n"
-      << "  \"coordinates\": [" << nodes.at(idx_node).lat << " , " << nodes.at(idx_node).lon << "]\n"
+      << "  \"coordinates\": [" << nodes.at(idx_node).lon << " , " << nodes.at(idx_node).lat << "]\n"
       //end geometry
       << "  }\n"
       //end feature
@@ -355,7 +356,7 @@ int main(int argc, char* argv[])
     for (size_t idx_nd = 0; idx_nd < nbr_nd; idx_nd++)
     {
       strm
-        << "  [" << ways.at(idx_way).nd.at(idx_nd).lat << " , " << ways.at(idx_way).nd.at(idx_nd).lon << "]"
+        << "  [" << ways.at(idx_way).nd.at(idx_nd).lon << " , " << ways.at(idx_way).nd.at(idx_nd).lat << "]"
         ;
       if (idx_nd < nbr_nd - 1)
       {

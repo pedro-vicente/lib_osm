@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Map</title>
+<link rel="stylesheet" href="leaflet.css" />
+<script src="leaflet.js"></script>
+<script type="text/javascript" src="leaflet.ajax.js"></script>
+<style>
+#map { height: 100%;}
+html, body {
+height: 100%;
+margin: 0;
+padding: 0;
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  var layer_base = L.tileLayer(
+     'http://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}@2x.png',{
+     opacity: 1,
+     attribution: '&copy; <a href=http://www.openstreetmap.org/copyright>OpenStreetMap</a>, &copy; <a href=https://carto.com/attribution>CARTO</a>'
+     });
+  var map = new L.Map('map', {
+     center: new L.LatLng(34.0667 , -118.734), 
+     zoom: 15,
+     layers: [layer_base]
+     });;
+  var style_ = {
+    "color": "#ff7800",
+    "weight": 5,
+    "opacity": 0.65
+  };
+  var geojsonLayer = new L.GeoJSON.AJAX("malibu_park.osm.json", {style: style_});       
+  geojsonLayer.addTo(map);
+</script>
+</body>
+</html>

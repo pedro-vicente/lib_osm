@@ -82,7 +82,7 @@ Assumption: the XML data defines all the nodes before the ways.
 
 ## Conversion to geoJSON
 
-<nodes> are converted to geoJSON "points", <ways> to "polygons"
+nodes are converted to geoJSON "points", ways to "polygons"
 
 ```json
 {

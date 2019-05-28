@@ -10,19 +10,6 @@ https://wiki.openstreetmap.org/wiki/Main_Page
 
 libhpxml is a high performance XML stream parser library written in C with a simple API. 
 It is intended to parse large XML files very speed and memory efficiently.
-While parsing an XML file libhpxml returns pointers to the elements and attributes. 
-C strings are usually '\0'-terminated but this is not applicable here because it would require that '\0' characters are inserted after each element, 
-resulting in huge data movement. 
-Thus, libhpxml uses "B strings" which are hold in the bstring_t structure. 
-The structure contains a pointer to the string and its length.
-
-```c
-typedef struct bstring
-{
-  int len;
-  char *buf;
-} bstring_t;
-```
 
 https://www.abenteuerland.at/libhpxml/
 
@@ -52,3 +39,62 @@ A relation is a multi-purpose data structure that documents a relationship betwe
 All types of data element (nodes, ways and relations), as well as changesets, can have tags. 
 Tags describe the meaning of the particular element to which they are attached.
 A tag consists of two free format text fields; a 'key' and a 'value'.
+
+## Data structures
+
+A node constains an ID and a location. A way is a list of nodes.
+
+```c++
+class osm_node
+{
+public:
+  osm_node() {};
+  unsigned int id;
+  double lat;
+  double lon;
+};
+
+class osm_way
+{
+public:
+  osm_way(){}
+  unsigned int id;
+  std::vector<osm_node> nd;
+};
+```
+
+## Storing nodes
+
+Assumption: the XML data defines all the nodes before the ways.
+  1) stream read <nodes> into a temporary list
+  2) every <way> is a list of <nd> items, each of which is a backreference to a <node>. 
+  Traverse all <nd> items and check if it exists in the temporary <node> list, store in <way> if it does
+
+
+```xml
+<node id='453966480' lat='34.07234' lon='-118.7343501' />
+<node id='453966482' lat='34.0670965' lon='-118.7322253' />
+<way id='38407529'>
+    <nd ref='453966480' />
+    <nd ref='453966482' />
+</way>
+```
+
+## Conversion to geoJSON
+
+<nodes> are converted to geoJSON "points", <ways> to "polygons"
+
+```json
+{
+"type": "FeatureCollection",
+"features": [
+  {
+  "type": "Feature",
+  "geometry": {
+  "type": "Polygon",
+  "coordinates": [[  [-118.734 , 34.0723],  [-118.732 , 34.0722] ]]
+  }
+  }
+]
+}
+```

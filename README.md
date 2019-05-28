@@ -66,9 +66,9 @@ public:
 ## Storing nodes
 
 Assumption: the XML data defines all the nodes before the ways.
-  1) stream read <nodes> into a temporary list
-  2) every <way> is a list of <nd> items, each of which is a backreference to a <node>. 
-  Traverse all <nd> items and check if it exists in the temporary <node> list, store in <way> if it does
+  1) stream read nodes into a temporary list
+  2) every way is a list of nd items, each of which is a backreference to a node. 
+  Traverse all nd items and check if it exists in the temporary node list, store in way if it does
 
 
 ```xml
